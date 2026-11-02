@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { GatewayConfig } from "../config.ts";
 import { encryptSecret, generateServiceKey, hashServiceKey, previewServiceKey } from "../crypto.ts";
 import { isCategory, type Store } from "../db/store.ts";
+import { isAllowedAddress } from "./access.ts";
 import {
     checkPassword,
     clearedCookie,
@@ -12,11 +13,10 @@ import {
     sessionCookie,
     verifySession,
 } from "./auth.ts";
-import { layout, loginPage } from "./html.ts";
+import { escapeHtml, layout, loginPage } from "./html.ts";
 import { dashboardPage, modelsPage, providersPage, servicesPage } from "./pages.ts";
 
 const MAX_FORM_BYTES = 64 * 1024;
-const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
 /** 新建 key 的明文只在内存里放 60 秒，够页面渲染一次，绝不进 URL */
 const pendingKeys = new Map<string, { key: string; expiresAt: number }>();
@@ -58,9 +58,19 @@ export async function handleAdmin(
         return true;
     }
 
-    // 面板只允许本机访问：即使网关监听在 0.0.0.0 也不会把管理界面暴露出去
-    if (!LOOPBACK.has(request.socket.remoteAddress ?? "")) {
-        sendHtml(response, 403, layout({ title: "禁止访问", active: "none", body: "<h1>管理面板只允许本机访问</h1>" }));
+    // 面板只允许白名单来源访问：默认回环；容器部署时配成容器默认网关 IP
+    if (!isAllowedAddress(request.socket.remoteAddress, config.adminAllowedIps)) {
+        sendHtml(
+            response,
+            403,
+            layout({
+                title: "禁止访问",
+                active: "none",
+                body: `<h1>管理面板只允许白名单地址访问</h1><p class="muted">来源 ${escapeHtml(
+                    request.socket.remoteAddress ?? "unknown",
+                )} 不在 ADMIN_ALLOWED_IPS 中。</p>`,
+            }),
+        );
         return true;
     }
 

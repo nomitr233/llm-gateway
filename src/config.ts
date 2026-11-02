@@ -14,6 +14,8 @@ export interface GatewayConfig {
     dbPoolMax: number;
     /** 管理面板密码；为 null 时面板关闭 */
     adminPassword: string | null;
+    /** 允许访问面板的来源地址，支持 IPv4 CIDR；容器部署时填网桥网关 IP */
+    adminAllowedIps: string[];
 }
 
 const LogLevelSchema = z.enum(["fatal", "error", "warn", "info", "debug", "trace"]);
@@ -50,6 +52,7 @@ const envSchema = z.object({
     DATABASE_URL: optionalStringFromEnv,
     GATEWAY_SECRET: optionalStringFromEnv,
     ADMIN_PASSWORD: optionalStringFromEnv,
+    ADMIN_ALLOWED_IPS: optionalStringFromEnv,
 });
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig {
@@ -85,7 +88,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
         gatewaySecret: values.GATEWAY_SECRET,
         dbPoolMax: values.DB_POOL_MAX,
         adminPassword: values.ADMIN_PASSWORD ?? null,
+        adminAllowedIps: parseAddressList(values.ADMIN_ALLOWED_IPS),
     };
+}
+
+const DEFAULT_ADMIN_ALLOWED_IPS = ["127.0.0.1", "::1"];
+
+/** 空列表等于把面板锁死，所以解析不出来时退回默认值而不是放行 */
+function parseAddressList(raw: string | undefined): string[] {
+    if (raw === undefined) return DEFAULT_ADMIN_ALLOWED_IPS;
+    const items = raw
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item !== "");
+    return items.length === 0 ? DEFAULT_ADMIN_ALLOWED_IPS : items;
 }
 
 /**

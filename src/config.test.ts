@@ -46,4 +46,19 @@ describe("启动配置", () => {
         const config = loadConfig({ ...baseEnv, DATABASE_URL: "postgresql://u:p%40ss@h:5432/db" });
         expect(config.databaseUrl).toContain("%40");
     });
+
+    it("面板白名单默认只允许回环", () => {
+        const config = loadConfig({ ...baseEnv });
+        expect(config.adminAllowedIps).toEqual(["127.0.0.1", "::1"]);
+        expect(config.adminPassword).toBeNull();
+    });
+
+    it("面板白名单支持逗号分隔和 CIDR（容器部署要用）", () => {
+        const config = loadConfig({ ...baseEnv, ADMIN_ALLOWED_IPS: "127.0.0.1, 172.18.0.1 ,172.16.0.0/12" });
+        expect(config.adminAllowedIps).toEqual(["127.0.0.1", "172.18.0.1", "172.16.0.0/12"]);
+    });
+
+    it("面板密码太短时拒绝启动", () => {
+        expect(() => loadConfig({ ...baseEnv, ADMIN_PASSWORD: "short" })).toThrow(/ADMIN_PASSWORD/);
+    });
 });

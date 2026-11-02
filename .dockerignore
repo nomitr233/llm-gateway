@@ -1,0 +1,11 @@
+node_modules
+.git
+.gitignore
+.github
+docs
+*.log
+.env
+.env.template
+.env.prod
+.idea
+ecosystem.config.cjs

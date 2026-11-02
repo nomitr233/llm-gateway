@@ -1,0 +1,33 @@
+name: llm-gateway
+
+services:
+  backend:
+    # 镜像名显式钉住：compose 默认按「目录名-服务名」推导，目录改名会被判定成镜像不存在而重建
+    image: llm-gateway-backend:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-gateway_backend
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+    # 只发布到宿主回环：对外一律走宿主 nginx
+    ports:
+      - "127.0.0.1:23360:4100"
+    networks:
+      - llm-gateway_net
+      - nomitr_net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  llm-gateway_net:
+    name: llm-gateway_net
+  nomitr_net:
+    name: nomitr_net
+    external: true
