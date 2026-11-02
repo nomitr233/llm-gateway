@@ -1,0 +1,31 @@
+{
+  "name": "llm-gateway",
+  "version": "1.0.0",
+  "description": "多模态 LLM 网关：集中管理上游 key 与模型（text/image/video/jev 分类），向下游签发服务 key，OpenAI 兼容协议调用，含重试与故障降级",
+  "scripts": {
+    "start": "node src/index.ts",
+    "dev": "node --watch src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm test",
+    "db:migrate": "node scripts/admin.ts migrate",
+    "admin": "node scripts/admin.ts"
+  },
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "packageManager": "pnpm@12.6.0",
+  "dependencies": {
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "zod": "^4.6.7"
+  }
+}
