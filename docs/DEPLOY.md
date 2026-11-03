@@ -65,6 +65,21 @@ postgresql://llm_gateway:<强密码>@postgres:5432/llm_gateway
 
 表结构由网关启动时自动迁移（`applySchema`），不需要额外执行 SQL，也没有 `psql`/`pg_dump` 依赖。
 
+### 在容器里登记配置
+
+镜像里带了 `scripts/admin.ts`，环境变量由 compose 注入，所以可以直接在容器里跑：
+
+```bash
+docker exec -it llm-gateway_backend node scripts/admin.ts provider add \
+  --name deepseek --base-url https://api.deepseek.com --api-key sk-xxxx
+docker exec -it llm-gateway_backend node scripts/admin.ts model add \
+  --public chat-default --provider deepseek --upstream deepseek-chat --category text --default
+docker exec -it llm-gateway_backend node scripts/admin.ts service add --name qqbot   # 只打印一次
+docker exec -it llm-gateway_backend node scripts/admin.ts provider list
+```
+
+面板（SSH 隧道后）也能做同样的事，CLI 适合脚本化和首次初始化。
+
 ## 环境变量
 
 | 变量 | 说明 |

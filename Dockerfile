@@ -9,6 +9,8 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile
 
 COPY --chown=node:node src ./src
+# 管理 CLI 也进镜像，方便在容器里直接登记上游/模型/服务 key
+COPY --chown=node:node scripts ./scripts
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
