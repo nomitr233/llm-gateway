@@ -1,4 +1,4 @@
-name: ci
+name: llm网关ci中
 
 on:
   push:

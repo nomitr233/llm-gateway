@@ -192,7 +192,9 @@ async function handleImageGenerations(
     const entry: ModelEntry = resolveModel(snapshot, "image", requested);
 
     // 对上游用真实模型名；n 收窄到 4，避免一个请求打出去 10 张图
-    const payload: Record<string, unknown> = { ...body, model: entry.upstreamModel, prompt };
+    // stream 对生图没有意义，不能透传给上游（有的实现会因此报错）
+    const { stream: _ignoredStream, ...imageFields } = body;
+    const payload: Record<string, unknown> = { ...imageFields, model: entry.upstreamModel, prompt };
     if (body.n !== undefined) payload.n = readImageCount(body.n);
 
     const result = await runWithFailover(
@@ -244,8 +246,10 @@ async function handleSpeech(
     const requested = typeof body.model === "string" ? body.model : undefined;
     const entry: ModelEntry = resolveModel(snapshot, "tts", requested);
 
-    const payload: Record<string, unknown> = { ...body, model: entry.upstreamModel, input };
-    // OpenAI 协议里 voice 是必填；调用方没给就用默认音色
+    // 对上游用真实模型名；voice 缺失时补默认音色（OpenAI 协议里它是必填）
+    // 语音合成不支持流式，stream 字段不能透传给上游
+    const { stream: _ignoredStream, ...speechFields } = body;
+    const payload: Record<string, unknown> = { ...speechFields, model: entry.upstreamModel, input };
     if (payload.voice === undefined) payload.voice = "alloy";
 
     const result = await runWithFailover(
